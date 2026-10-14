@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
+  --background: #f4f6f4;
   --foreground: #171717;
 }
 
@@ -12,15 +12,136 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root.dark {
+  color-scheme: dark;
+  --background: #0b120e;
+  --foreground: #e5ece6;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+html.dark body {
+  background: #0b120e;
+}
+
+html.dark .bg-white,
+html.dark [class~="bg-[#ffffff]"] {
+  background-color: #17231b;
+}
+
+html.dark .bg-slate-50,
+html.dark .hover\:bg-slate-50:hover,
+html.dark [class~="bg-[#f4f6f4]"] {
+  background-color: #111b14;
+}
+
+html.dark .bg-slate-100,
+html.dark [class~="bg-[#ebf3ed]"] {
+  background-color: #223429;
+}
+
+html.dark .bg-slate-700 {
+  background-color: #34483a;
+}
+
+html.dark .bg-slate-800 {
+  background-color: #26372c;
+}
+
+html.dark .bg-slate-900 {
+  background-color: #070d09;
+}
+
+html.dark .text-slate-800,
+html.dark [class~="text-[#1a3821]"] {
+  color: #e5ece6;
+}
+
+html.dark .text-slate-700 {
+  color: #cbd7cd;
+}
+
+html.dark .text-slate-600 {
+  color: #b3c1b6;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #91a194;
+}
+
+html.dark [class~="text-[#2e6f40]"] {
+  color: #83c996;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #34463a;
+}
+
+html.dark .border-amber-200 {
+  border-color: #6a5226;
+}
+
+html.dark .border-emerald-200 {
+  border-color: #285b3a;
+}
+
+html.dark .border-rose-200 {
+  border-color: #713b3b;
+}
+
+html.dark .bg-emerald-50,
+html.dark .bg-emerald-100 {
+  background-color: #183b27;
+}
+
+html.dark .bg-rose-50,
+html.dark .bg-rose-100 {
+  background-color: #472626;
+}
+
+html.dark .bg-amber-100 {
+  background-color: #49391b;
+}
+
+html.dark .text-emerald-800,
+html.dark .text-emerald-700,
+html.dark .text-emerald-600 {
+  color: #9adeaa;
+}
+
+html.dark .text-rose-800,
+html.dark .text-rose-600 {
+  color: #ffaaaa;
+}
+
+html.dark .text-amber-800,
+html.dark .text-amber-600 {
+  color: #f2ce7a;
+}
+
+html.dark .dark-mode-toggle {
+  border-color: #34463a;
+  background-color: #17231b;
+  color: #e5ece6;
+}
+
+html.dark .dark-mode-toggle:hover {
+  background-color: #26372c;
+}
+
+html.dark input,
+html.dark select {
+  color-scheme: dark;
+}
+
+html.dark select option {
+  background-color: #17231b;
+  color: #e5ece6;
 }

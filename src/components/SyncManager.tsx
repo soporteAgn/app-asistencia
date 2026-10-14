@@ -7,6 +7,35 @@ import { db } from '@/lib/db';
 import { syncUserData } from '@/lib/data-sync';
 import type { Perfil } from '@/lib/permissions';
 
+function detalleError(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (!error || typeof error !== 'object') {
+    return 'No se pudieron sincronizar los datos. Se reintentará al recuperar la conexión.';
+  }
+
+  const detalle = error as {
+    code?: unknown;
+    message?: unknown;
+    details?: unknown;
+    hint?: unknown;
+  };
+  const partes = [detalle.message, detalle.details, detalle.hint]
+    .filter((parte): parte is string => typeof parte === 'string' && parte.length > 0);
+  const mensaje = partes.join(' ');
+  const columnasMarcaciones = /hora_salida_comida|hora_regreso_comida|hora_salida/.test(mensaje);
+
+  if (
+    columnasMarcaciones &&
+    (detalle.code === 'PGRST204' || detalle.code === '42703' || /column .* does not exist|schema cache/i.test(mensaje))
+  ) {
+    return 'Supabase aún no tiene las columnas nuevas de asistencia. Ejecuta el archivo supabase/migrations/202610140001_attendance_punches.sql en el SQL Editor de tu proyecto y vuelve a sincronizar.';
+  }
+
+  return mensaje
+    ? `${typeof detalle.code === 'string' ? `[${detalle.code}] ` : ''}${mensaje}`
+    : 'No se pudieron sincronizar los datos. Se reintentará al recuperar la conexión.';
+}
+
 export default function SyncManager({ profile }: { profile: Perfil }) {
   const [estaEnLinea, setEstaEnLinea] = useState(
     typeof window !== 'undefined' ? navigator.onLine : true,
@@ -31,10 +60,9 @@ export default function SyncManager({ profile }: { profile: Perfil }) {
       await syncUserData(profile.id, profile.role, profile.permissions);
       setMensajeSync(null);
     } catch (error) {
-      console.error('Error al sincronizar datos con Supabase:', error);
-      setMensajeSync(error instanceof Error
-        ? `No se pudo sincronizar: ${error.message}`
-        : 'No se pudieron sincronizar los datos. Se reintentará al recuperar la conexión.');
+      const detalle = detalleError(error);
+      console.error('Error al sincronizar datos con Supabase:', detalle, error);
+      setMensajeSync(`No se pudo sincronizar: ${detalle}`);
     } finally {
       lock.current = false;
       setSincronizando(false);

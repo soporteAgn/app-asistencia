@@ -8,6 +8,13 @@ import ReportesExportar from '@/components/ReportesExportar';
 import SyncManager from '@/components/SyncManager';
 import AdministrarUsuarios from '@/components/AdministrarUsuarios';
 import { db, type Trabajador } from '@/lib/db';
+import {
+  formatearDuracionComida,
+  nombrePasoMarcacion,
+  obtenerFechaLocal,
+  obtenerSiguientePaso,
+  registrarSiguienteMarcacion,
+} from '@/lib/asistencia';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '@/lib/auth';
 import type { Perfil, Modulo } from '@/lib/permissions';
@@ -244,26 +251,20 @@ function AplicacionAsistencia({ user, profile }: { user: User; profile: Perfil }
     [user.id],
   );
 
-  // Función para registrar asistencia localmente (Modo Offline)
-  const registrarEntrada = async (trabajador: Trabajador & { id: number }) => {
-    const horaActual = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-    const fechaActual = new Date().toISOString().split('T')[0];
-
-    await db.asistencias.add({
-      trabajadorId: trabajador.id,
-      nombre: trabajador.nombre,
-      cuadrilla: trabajador.cuadrilla,
-      rancho: trabajador.rancho,
-      horaEntrada: horaActual,
-      fecha: fechaActual,
-      sincronizado: false,
-      cloudId: crypto.randomUUID(),
-      userId: user.id,
-    });
+  const marcarAsistencia = async (trabajador: Trabajador & { id: number }) => {
+    try {
+      const { paso, hora } = await registrarSiguienteMarcacion(trabajador, user.id);
+      alert(`${nombrePasoMarcacion(paso)} de ${trabajador.nombre} registrada a las ${hora}.`);
+    } catch (error) {
+      console.error('No se pudo registrar la marcación:', error);
+      alert(error instanceof Error ? error.message : 'No se pudo registrar la marcación.');
+    }
   };
 
+  const fechaHoy = obtenerFechaLocal();
+  const asistenciasHoy = asistencias?.filter((registro) => registro.fecha === fechaHoy) ?? [];
   const totalTrabajadores = canView('asistencia') ? trabajadores?.length || 0 : 0;
-  const totalPresentes = canView('asistencia') ? asistencias?.length || 0 : 0;
+  const totalPresentes = canView('asistencia') ? asistenciasHoy.length : 0;
   const sinRegistro = totalTrabajadores - totalPresentes;
 
   const trabajadoresFiltrados = trabajadores?.filter(t =>
@@ -356,7 +357,7 @@ function AplicacionAsistencia({ user, profile }: { user: User; profile: Perfil }
       {/* Main Area */}
       <main className="min-w-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
         {/* Header */}
-        <header className="flex justify-between items-center mb-6">
+        <header className="flex justify-between items-center mb-6 pr-14">
           <div className="flex min-w-0 items-start gap-3">
             <button
               type="button"
@@ -425,19 +426,31 @@ function AplicacionAsistencia({ user, profile }: { user: User; profile: Perfil }
               </div>
 
               <div className="overflow-x-auto">
-              <table className="w-full min-w-[720px] text-left border-collapse">
+              <table className="w-full min-w-[980px] text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50 text-slate-500 text-xs uppercase font-semibold border-b border-slate-200">
                     <th className="p-4">Trabajador</th>
                     <th className="p-4">Cuadrilla / Rancho</th>
                     <th className="p-4">Hora Entrada</th>
+                    <th className="p-4">Salida a comer</th>
+                    <th className="p-4">Regreso comida</th>
+                    <th className="p-4">Tiempo comida</th>
+                    <th className="p-4">Hora Salida</th>
                     <th className="p-4">Estado</th>
                     <th className="p-4 text-right">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 text-sm">
                   {trabajadoresFiltrados?.map((trabajador) => {
-                    const registro = asistencias?.find(a => a.trabajadorId === trabajador.id);
+                    const registro = asistenciasHoy.find(a => a.trabajadorId === trabajador.id);
+                    const siguientePaso = obtenerSiguientePaso(registro);
+                    const estado = !registro
+                      ? 'Sin entrada'
+                      : registro.horaSalida
+                        ? 'Turno finalizado'
+                        : registro.horaSalidaComida && !registro.horaRegresoComida
+                          ? 'En comida'
+                          : 'En turno';
                     return (
                       <tr key={trabajador.id} className="hover:bg-slate-50 transition">
                         <td className="p-4 font-semibold text-slate-800">{trabajador.nombre}</td>
@@ -446,10 +459,14 @@ function AplicacionAsistencia({ user, profile }: { user: User; profile: Perfil }
                           <div className="text-xs text-slate-400">{trabajador.rancho}</div>
                         </td>
                         <td className="p-4 text-slate-600">{registro ? registro.horaEntrada : '--:--'}</td>
+                        <td className="p-4 text-slate-600">{registro?.horaSalidaComida ?? '--:--'}</td>
+                        <td className="p-4 text-slate-600">{registro?.horaRegresoComida ?? '--:--'}</td>
+                        <td className="p-4 text-slate-600">{formatearDuracionComida(registro)}</td>
+                        <td className="p-4 text-slate-600">{registro?.horaSalida ?? '--:--'}</td>
                         <td className="p-4">
                           {registro ? (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
-                              <CheckCircle2 size={12} /> Presente
+                              <CheckCircle2 size={12} /> {estado}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-600">
@@ -458,12 +475,12 @@ function AplicacionAsistencia({ user, profile }: { user: User; profile: Perfil }
                           )}
                         </td>
                         <td className="p-4 text-right">
-                          {!registro && (
+                          {siguientePaso && (
                             <button
-                              onClick={() => registrarEntrada(trabajador)}
+                              onClick={() => void marcarAsistencia(trabajador)}
                               className="px-3 py-1.5 bg-[#2e6f40] text-white text-xs font-semibold rounded-lg hover:bg-[#235732] transition"
                             >
-                              Marcar Entrada
+                              Marcar {nombrePasoMarcacion(siguientePaso)}
                             </button>
                           )}
                         </td>

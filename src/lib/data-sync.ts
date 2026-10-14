@@ -19,6 +19,9 @@ type AsistenciaRemota = {
   cuadrilla: string;
   rancho: string;
   hora_entrada: string;
+  hora_salida_comida: string | null;
+  hora_regreso_comida: string | null;
+  hora_salida: string | null;
   fecha: string;
 };
 
@@ -89,6 +92,9 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
         cuadrilla: registro.cuadrilla,
         rancho: registro.rancho,
         hora_entrada: registro.horaEntrada,
+        hora_salida_comida: registro.horaSalidaComida ?? null,
+        hora_regreso_comida: registro.horaRegresoComida ?? null,
+        hora_salida: registro.horaSalida ?? null,
         fecha: registro.fecha,
       });
       if (error) throw error;
@@ -131,7 +137,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
 
   if (puedeLeerAsistencias) {
     const { data, error } = await supabase.from('asistencias')
-      .select('id, user_id, trabajador_id, nombre, cuadrilla, rancho, hora_entrada, fecha');
+      .select('id, user_id, trabajador_id, nombre, cuadrilla, rancho, hora_entrada, hora_salida_comida, hora_regreso_comida, hora_salida, fecha');
     if (error) throw error;
     await db.transaction('rw', db.trabajadores, db.asistencias, async () => {
       for (const remoto of (data ?? []) as AsistenciaRemota[]) {
@@ -151,6 +157,9 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
           cuadrilla: remoto.cuadrilla,
           rancho: remoto.rancho,
           horaEntrada: remoto.hora_entrada,
+          horaSalidaComida: remoto.hora_salida_comida ?? undefined,
+          horaRegresoComida: remoto.hora_regreso_comida ?? undefined,
+          horaSalida: remoto.hora_salida ?? undefined,
           fecha: remoto.fecha,
           sincronizado: true,
         };
@@ -160,6 +169,9 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
             local.cuadrilla === valores.cuadrilla &&
             local.rancho === valores.rancho &&
             local.horaEntrada === valores.horaEntrada &&
+            local.horaSalidaComida === valores.horaSalidaComida &&
+            local.horaRegresoComida === valores.horaRegresoComida &&
+            local.horaSalida === valores.horaSalida &&
             local.fecha === valores.fecha &&
             local.sincronizado;
           if (!coincide) await db.asistencias.update(local.id, valores);

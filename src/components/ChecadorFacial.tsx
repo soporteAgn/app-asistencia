@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { db, type Trabajador } from '@/lib/db';
 import { useAuth } from '@/lib/auth';
+import { nombrePasoMarcacion, registrarSiguienteMarcacion } from '@/lib/asistencia';
 
 type FaceApi = typeof import('@vladmandic/face-api');
 type Mensaje = { tipo: 'exito' | 'error' | 'info'; texto: string };
@@ -254,38 +255,19 @@ export default function ChecadorFacial() {
       }
 
       const trabajadorActual = await db.trabajadores.get(mejorCoincidencia.trabajador.id!);
-      if (!trabajadorActual || trabajadorActual.estado !== 'Activo') {
+      if (!trabajadorActual?.id || trabajadorActual.estado !== 'Activo') {
         throw new Error('El trabajador reconocido ya no está activo en la base local.');
       }
 
-      const ahora = new Date();
-      const fecha = ahora.toISOString().split('T')[0];
-      const registroExistente = await db.asistencias
-        .where('fecha')
-        .equals(fecha)
-        .and((registro) => registro.trabajadorId === trabajadorActual.id && registro.userId === user?.id)
-        .first();
-      if (registroExistente) {
-        throw new Error(`${trabajadorActual.nombre} ya tiene entrada registrada hoy.`);
-      }
-
-      const horaEntrada = ahora.toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
-      await db.asistencias.add({
-        trabajadorId: trabajadorActual.id!,
-        nombre: trabajadorActual.nombre,
-        cuadrilla: trabajadorActual.cuadrilla,
-        rancho: trabajadorActual.rancho,
-        horaEntrada,
-        fecha,
-        sincronizado: false,
-        cloudId: crypto.randomUUID(),
-        userId: user?.id,
-      });
-
+      if (!user?.id) throw new Error('No se encontró una sesión activa para guardar la marcación.');
+      const { paso, hora } = await registrarSiguienteMarcacion(
+        trabajadorActual,
+        user.id,
+      );
       setUltimoDetectado(trabajadorActual.nombre);
       setMensaje({
         tipo: 'exito',
-        texto: `Entrada de ${trabajadorActual.nombre} registrada localmente a las ${horaEntrada}.`,
+        texto: `${nombrePasoMarcacion(paso)} de ${trabajadorActual.nombre} registrada localmente a las ${hora}.`,
       });
     } catch (error) {
       setMensaje({ tipo: 'error', texto: mensajeDeError(error) });
@@ -405,13 +387,13 @@ export default function ChecadorFacial() {
         </div>
       ) : (
           <p className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            El registro facial está disponible. Para enrolar nuevas plantillas, solicita apoyo al administrador de TI.
+            El checador registra la entrada, salida a comer, regreso de comida y salida final en ese orden.
           </p>
         )}
 
       {ultimoDetectado && (
         <div className="mt-4 p-4 bg-[#f4f6f4] rounded-lg border border-slate-200 text-center">
-          <p className="text-xs text-slate-500 uppercase font-semibold">Última entrada reconocida:</p>
+          <p className="text-xs text-slate-500 uppercase font-semibold">Última marcación reconocida:</p>
           <p className="text-lg font-bold text-[#1a3821]">{ultimoDetectado}</p>
         </div>
       )}
@@ -427,7 +409,7 @@ export default function ChecadorFacial() {
           </>
         ) : (
           <>
-            <UserCheck size={18} /> Escanear y registrar rostro
+            <UserCheck size={18} /> Escanear y registrar marcación
           </>
         )}
       </button>

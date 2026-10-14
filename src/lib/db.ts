@@ -21,6 +21,9 @@ export interface RegistroAsistencia {
   cuadrilla: string;
   rancho: string;
   horaEntrada: string;
+  horaSalidaComida?: string;
+  horaRegresoComida?: string;
+  horaSalida?: string;
   fecha: string;
   sincronizado: boolean;
 }

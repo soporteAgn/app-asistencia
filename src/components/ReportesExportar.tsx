@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { db } from '@/lib/db';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '@/lib/auth';
+import { formatearDuracionComida } from '@/lib/asistencia';
 import { Download, FileSpreadsheet } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
@@ -55,6 +56,10 @@ export default function ReportesExportar() {
       'Rancho': item.rancho,
       'Fecha': item.fecha,
       'Hora de Entrada': item.horaEntrada,
+      'Salida a Comer': item.horaSalidaComida ?? '',
+      'Regreso de Comida': item.horaRegresoComida ?? '',
+      'Duración de Comida': formatearDuracionComida(item),
+      'Hora de Salida': item.horaSalida ?? '',
       'Estado de Sincronización': item.sincronizado ? 'Sincronizado' : 'Pendiente (Offline)'
     }));
 
@@ -72,8 +77,8 @@ export default function ReportesExportar() {
       <div className="flex items-center gap-3 mb-6">
         <FileSpreadsheet className="text-[#2e6f40]" size={28} />
         <div>
-          <h2 className="text-xl font-bold text-[#1a3821]">Exportación de Reportes a Excel (.xlsx)</h2>
-          <p className="text-xs text-slate-500">Obtén el concentrado de asistencia offline filtrado para nómina o auditoría.</p>
+          <h2 className="text-xl font-bold text-[#1a3821]">Exportación de Asistencia y Jornada a Excel (.xlsx)</h2>
+          <p className="text-xs text-slate-500">Incluye entrada, salida, marcaciones de comida y su duración calculada.</p>
         </div>
       </div>
 
