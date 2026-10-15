@@ -7,9 +7,7 @@ import {
   Camera,
   CheckCircle2,
   RefreshCw,
-  ShieldCheck,
   UserCheck,
-  UserPlus,
 } from 'lucide-react';
 import { db, type Trabajador } from '@/lib/db';
 import { useAuth } from '@/lib/auth';
@@ -46,16 +44,14 @@ function mensajeDeError(error: unknown) {
 }
 
 export default function ChecadorFacial() {
-  const { user, profile } = useAuth();
-  const puedeEnrolar = profile?.role === 'admin';
+  const { user } = useAuth();
   const videoRef = useRef<HTMLVideoElement>(null);
   const faceApiRef = useRef<FaceApi | null>(null);
   const [camaraLista, setCamaraLista] = useState(false);
   const [errorCamara, setErrorCamara] = useState<string | null>(null);
   const [modelosListos, setModelosListos] = useState(false);
   const [errorModelos, setErrorModelos] = useState<string | null>(null);
-  const [procesando, setProcesando] = useState<'escanear' | 'enrolar' | null>(null);
-  const [trabajadorId, setTrabajadorId] = useState('');
+  const [procesando, setProcesando] = useState(false);
   const [mensaje, setMensaje] = useState<Mensaje | null>(null);
   const [ultimoDetectado, setUltimoDetectado] = useState<string | null>(null);
   const trabajadores = useLiveQuery(
@@ -66,11 +62,7 @@ export default function ChecadorFacial() {
     () => trabajadores?.filter((trabajador) => trabajador.estado === 'Activo') ?? [],
     [trabajadores],
   );
-  const idSeleccionado = trabajadorId || String(trabajadoresActivos[0]?.id ?? '');
-  const trabajadorSeleccionado = trabajadoresActivos.find(
-    (trabajador) => String(trabajador.id) === idSeleccionado,
-  );
-  const puedeProcesar = camaraLista && modelosListos && procesando === null;
+  const puedeProcesar = camaraLista && modelosListos && !procesando;
 
   useEffect(() => {
     let cancelado = false;
@@ -164,45 +156,6 @@ export default function ChecadorFacial() {
     return resultados[0].descriptor;
   };
 
-  const enrolarTrabajador = async () => {
-    if (!puedeEnrolar) {
-      setMensaje({ tipo: 'error', texto: 'Solo el administrador de TI puede enrolar plantillas faciales.' });
-      return;
-    }
-    if (!trabajadorSeleccionado?.id) {
-      setMensaje({ tipo: 'error', texto: 'Selecciona un trabajador activo para enrolarlo.' });
-      return;
-    }
-
-    setProcesando('enrolar');
-    setMensaje({ tipo: 'info', texto: `Capturando 3 muestras faciales de ${trabajadorSeleccionado.nombre}...` });
-
-    try {
-      const muestras: number[][] = [];
-      for (let muestra = 0; muestra < 3; muestra += 1) {
-        const descriptor = await obtenerDescriptor();
-        muestras.push(Array.from(descriptor));
-        if (muestra < 2) await new Promise((resolve) => setTimeout(resolve, 450));
-      }
-
-      const descriptorPromedio = muestras[0].map(
-        (_, indice) => muestras.reduce((suma, muestra) => suma + muestra[indice], 0) / muestras.length,
-      );
-      await db.trabajadores.update(trabajadorSeleccionado.id, {
-        vectorFacial: JSON.stringify(descriptorPromedio),
-        sincronizado: false,
-      });
-      setMensaje({
-        tipo: 'exito',
-        texto: `Rostro enrolado para ${trabajadorSeleccionado.nombre}. La plantilla quedó guardada en este dispositivo.`,
-      });
-    } catch (error) {
-      setMensaje({ tipo: 'error', texto: mensajeDeError(error) });
-    } finally {
-      setProcesando(null);
-    }
-  };
-
   const escanearYRegistrar = async () => {
     if (!trabajadores) {
       setMensaje({ tipo: 'error', texto: 'Aún se está cargando la lista local de trabajadores.' });
@@ -223,11 +176,11 @@ export default function ChecadorFacial() {
       enrolados.push({ trabajador, descriptor });
     }
     if (enrolados.length === 0) {
-      setMensaje({ tipo: 'error', texto: 'No hay rostros enrolados. Enrola primero a cada trabajador activo.' });
+      setMensaje({ tipo: 'error', texto: 'No hay rostros enrolados. Da de alta a los trabajadores en Gestión de Personal capturando su rostro.' });
       return;
     }
 
-    setProcesando('escanear');
+    setProcesando(true);
     setMensaje({ tipo: 'info', texto: 'Analizando el rostro y comparándolo con las plantillas locales...' });
 
     try {
@@ -272,7 +225,7 @@ export default function ChecadorFacial() {
     } catch (error) {
       setMensaje({ tipo: 'error', texto: mensajeDeError(error) });
     } finally {
-      setProcesando(null);
+      setProcesando(false);
     }
   };
 
@@ -283,7 +236,7 @@ export default function ChecadorFacial() {
           <Camera className="text-[#2e6f40]" /> Checador Facial (Offline)
         </h2>
         <p className="text-xs text-slate-500 mt-1">
-          Enrola a cada trabajador una vez. El reconocimiento y el registro se realizan en este dispositivo.
+          Colócate frente a la cámara y pulsa el botón para registrar tu siguiente marcación.
         </p>
       </div>
 
@@ -353,44 +306,6 @@ export default function ChecadorFacial() {
         </div>
       )}
 
-      {puedeEnrolar ? (
-        <div className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4">
-          <label htmlFor="trabajador-enrolamiento" className="mb-2 block text-sm font-semibold text-slate-700">
-            Enrolar rostro de un trabajador activo
-          </label>
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <select
-              id="trabajador-enrolamiento"
-              value={idSeleccionado}
-              onChange={(event) => setTrabajadorId(event.target.value)}
-              disabled={procesando !== null || trabajadoresActivos.length === 0}
-              className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-            >
-              {trabajadoresActivos.length === 0 && <option value="">No hay trabajadores activos</option>}
-              {trabajadoresActivos.map((trabajador) => (
-                <option key={trabajador.id} value={trabajador.id}>
-                  {trabajador.nombre} {trabajador.vectorFacial ? '(enrolado)' : ''}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={enrolarTrabajador}
-              disabled={!puedeProcesar || !trabajadorSeleccionado}
-              className="flex items-center justify-center gap-2 rounded-lg bg-slate-700 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50"
-            >
-              <UserPlus size={16} /> Enrolar rostro
-            </button>
-          </div>
-          <p className="mt-2 flex items-center gap-1 text-xs text-slate-500">
-            <ShieldCheck size={14} /> La plantilla facial se guarda únicamente en este dispositivo.
-          </p>
-        </div>
-      ) : (
-          <p className="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            El checador registra la entrada, salida a comer, regreso de comida y salida final en ese orden.
-          </p>
-        )}
-
       {ultimoDetectado && (
         <div className="mt-4 p-4 bg-[#f4f6f4] rounded-lg border border-slate-200 text-center">
           <p className="text-xs text-slate-500 uppercase font-semibold">Última marcación reconocida:</p>
@@ -413,10 +328,6 @@ export default function ChecadorFacial() {
           </>
         )}
       </button>
-      <p className="mt-3 text-center text-xs text-slate-500">
-        {trabajadoresActivos.filter((trabajador) => trabajador.vectorFacial).length} de {trabajadoresActivos.length}{' '}
-        trabajadores activos enrolados
-      </p>
     </div>
   );
 }

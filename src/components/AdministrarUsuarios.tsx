@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Check, LoaderCircle, MailPlus, RefreshCw, Shield, Users } from 'lucide-react';
+import { Check, LoaderCircle, MailPlus, RefreshCw, Shield, Trash2, Users } from 'lucide-react';
 import { useAuth } from '@/lib/auth';
 import { MODULOS, type Modulo } from '@/lib/permissions';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
@@ -13,6 +13,8 @@ type UsuarioAdministrable = {
   role: 'admin' | 'user';
   permissions: Modulo[];
   created_at: string;
+  deleted_at: string | null;
+  deleted_by_name: string | null;
 };
 
 export default function AdministrarUsuarios() {
@@ -26,7 +28,7 @@ export default function AdministrarUsuarios() {
   const [guardando, setGuardando] = useState(false);
   const [mensaje, setMensaje] = useState<{ error: boolean; texto: string } | null>(null);
 
-  const solicitar = useCallback(async (method: 'GET' | 'POST' | 'PATCH', body?: object) => {
+  const solicitar = useCallback(async (method: 'GET' | 'POST' | 'PATCH' | 'DELETE', body?: object) => {
     const { data: { session }, error: sessionError } = await getSupabaseBrowserClient().auth.getSession();
     if (sessionError) throw sessionError;
     if (!session) throw new Error('Tu sesión expiró. Inicia sesión nuevamente.');
@@ -109,6 +111,22 @@ export default function AdministrarUsuarios() {
     }
   };
 
+  const darDeBajaUsuario = async (usuario: UsuarioAdministrable) => {
+    if (!window.confirm(`¿Deseas dar de baja a ${usuario.full_name || usuario.email}? Su acceso será bloqueado y la baja quedará registrada.`)) {
+      return;
+    }
+    setGuardando(true);
+    try {
+      const result = await solicitar('DELETE', { id: usuario.id }) as { message: string };
+      setMensaje({ error: false, texto: result.message });
+      await cargarUsuarios();
+    } catch (error) {
+      setMensaje({ error: true, texto: error instanceof Error ? error.message : 'No fue posible dar de baja al usuario.' });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
   const actualizarPermisos = (usuarioId: string, modulo: Modulo, activo: boolean) => {
     setUsuarios((actuales) => actuales.map((usuario) => {
       if (usuario.id !== usuarioId) return usuario;
@@ -179,7 +197,7 @@ export default function AdministrarUsuarios() {
 
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="flex items-center justify-between border-b border-slate-100 p-4">
-          <h3 className="flex items-center gap-2 font-semibold text-slate-800"><Users size={18} /> Usuarios registrados</h3>
+          <h3 className="flex items-center gap-2 font-semibold text-slate-800"><Users size={18} /> Usuarios y bajas</h3>
           <button type="button" onClick={() => void cargarUsuarios()} aria-label="Actualizar usuarios"
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"><RefreshCw size={17} /></button>
         </div>
@@ -191,6 +209,7 @@ export default function AdministrarUsuarios() {
           <div className="divide-y divide-slate-100">
             {usuarios.map((usuario) => {
               const esActual = usuario.id === usuarioActual?.id;
+              const dadoDeBaja = usuario.deleted_at !== null;
               return (
                 <article key={usuario.id} className="space-y-3 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -198,9 +217,9 @@ export default function AdministrarUsuarios() {
                       <p className="font-semibold text-slate-800">{usuario.full_name || usuario.email}</p>
                       <p className="text-sm text-slate-500">{usuario.email}{esActual ? ' · Tú' : ''}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <select aria-label={`Rol de ${usuario.email}`} value={usuario.role}
-                        disabled={esActual}
+                        disabled={esActual || dadoDeBaja}
                         onChange={(event) => setUsuarios((actuales) => actuales.map((actual) => actual.id === usuario.id
                           ? {
                               ...actual,
@@ -212,13 +231,23 @@ export default function AdministrarUsuarios() {
                         <option value="user">Usuario</option>
                         <option value="admin">Administrador TI</option>
                       </select>
-                      <button type="button" disabled={guardando || esActual} onClick={() => void actualizarUsuario(usuario)}
+                      <button type="button" disabled={guardando || esActual || dadoDeBaja} onClick={() => void actualizarUsuario(usuario)}
                         className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50">
                         <Check size={16} /> Guardar
                       </button>
+                      {!dadoDeBaja && (
+                        <button type="button" disabled={guardando || esActual} onClick={() => void darDeBajaUsuario(usuario)}
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-rose-200 px-3 py-2 text-sm font-medium text-rose-700 hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-50">
+                          <Trash2 size={16} /> Dar de baja
+                        </button>
+                      )}
                     </div>
                   </div>
-                  {usuario.role === 'user' && !esActual && (
+                  {dadoDeBaja ? (
+                    <p className="text-sm text-rose-700">
+                      Dado de baja el {usuario.deleted_at ? new Date(usuario.deleted_at).toLocaleString() : ''} por {usuario.deleted_by_name || 'usuario desconocido'}.
+                    </p>
+                  ) : usuario.role === 'user' && !esActual ? (
                     <div className="grid gap-2 sm:grid-cols-2">
                       {MODULOS.map((modulo) => (
                         <label key={modulo.id} className="flex items-center gap-2 text-sm text-slate-600">
@@ -229,8 +258,8 @@ export default function AdministrarUsuarios() {
                         </label>
                       ))}
                     </div>
-                  )}
-                  {usuario.role === 'admin' && <p className="text-xs text-emerald-700">Acceso completo a todos los módulos.</p>}
+                  ) : null}
+                  {!dadoDeBaja && usuario.role === 'admin' && <p className="text-xs text-emerald-700">Acceso completo a todos los módulos.</p>}
                 </article>
               );
             })}

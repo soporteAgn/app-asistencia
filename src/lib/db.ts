@@ -9,7 +9,28 @@ export interface Trabajador {
   cuadrilla: string;
   rancho: string;
   estado: 'Activo' | 'Baja';
+  puesto?: string;
+  horaEntradaProgramada?: string | null;
+  horaSalidaProgramada?: string | null;
+  vacacionesInicio?: string | null;
+  vacacionesFin?: string | null;
   vectorFacial?: string | null;
+}
+
+export interface Rancho {
+  id?: number;
+  cloudId: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface Puesto {
+  id?: number;
+  cloudId: string;
+  nombre: string;
+  horaEntrada: string;
+  horaSalida: string;
+  activo: boolean;
 }
 
 export interface RegistroAsistencia {
@@ -32,6 +53,8 @@ export class CampoSyncDB extends Dexie {
   trabajadores!: Table<Trabajador>;
   colaboradores!: Table<Trabajador>;
   asistencias!: Table<RegistroAsistencia>;
+  ranchos!: Table<Rancho>;
+  puestos!: Table<Puesto>;
 
   constructor() {
     super('CampoSyncDatabase');
@@ -49,6 +72,13 @@ export class CampoSyncDB extends Dexie {
       trabajadores: '++id, nombre, cuadrilla, rancho, estado, userId, cloudId, sincronizado',
       colaboradores: '++id, nombre, cuadrilla, rancho, estado',
       asistencias: '++id, trabajadorId, fecha, sincronizado, userId, cloudId'
+    });
+    this.version(4).stores({
+      trabajadores: '++id, nombre, cuadrilla, rancho, estado, userId, cloudId, sincronizado',
+      colaboradores: '++id, nombre, cuadrilla, rancho, estado',
+      asistencias: '++id, trabajadorId, fecha, sincronizado, userId, cloudId',
+      ranchos: '++id, cloudId, nombre, activo',
+      puestos: '++id, cloudId, nombre, activo',
     });
   }
 }

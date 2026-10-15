@@ -38,12 +38,12 @@ export async function obtenerClienteAdmin(request: NextRequest): Promise<AdminAu
     auth: { persistSession: false, autoRefreshToken: false },
   });
   const { data: profile, error: profileError } = await adminClient.from('profiles')
-    .select('role').eq('id', authData.user.id).maybeSingle();
+    .select('role, deleted_at').eq('id', authData.user.id).maybeSingle();
   if (profileError) {
     console.error('No se pudo verificar el rol administrativo:', profileError);
     return { error: 'No fue posible verificar los permisos administrativos.', status: 500 as const };
   }
-  if (profile?.role !== 'admin') {
+  if (profile?.role !== 'admin' || profile.deleted_at) {
     return { error: 'Solo un administrador de TI puede gestionar usuarios.', status: 403 as const };
   }
 

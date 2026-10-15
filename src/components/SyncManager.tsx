@@ -23,6 +23,22 @@ function detalleError(error: unknown) {
     .filter((parte): parte is string => typeof parte === 'string' && parte.length > 0);
   const mensaje = partes.join(' ');
   const columnasMarcaciones = /hora_salida_comida|hora_regreso_comida|hora_salida/.test(mensaje);
+  const columnasPersonal = /puesto|hora_entrada_programada|hora_salida_programada|vacaciones_inicio|vacaciones_fin/.test(mensaje);
+  const catalogosPersonal = /ranchos|puestos/.test(mensaje);
+
+  if (
+    columnasPersonal &&
+    (detalle.code === 'PGRST204' || detalle.code === '42703' || /column .* does not exist|schema cache/i.test(mensaje))
+  ) {
+    return 'Supabase aún no tiene los campos de puestos, horarios y vacaciones. Ejecuta supabase/migrations/202610150002_ranchos_puestos_vacaciones.sql en el SQL Editor y vuelve a sincronizar.';
+  }
+
+  if (
+    catalogosPersonal &&
+    (detalle.code === 'PGRST205' || detalle.code === '42P01' || /relation .* does not exist|schema cache/i.test(mensaje))
+  ) {
+    return 'Supabase aún no tiene los catálogos de ranchos y puestos. Ejecuta supabase/migrations/202610150002_ranchos_puestos_vacaciones.sql en el SQL Editor y vuelve a sincronizar.';
+  }
 
   if (
     columnasMarcaciones &&

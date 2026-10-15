@@ -1,4 +1,4 @@
-import { db, type RegistroAsistencia, type Trabajador } from '@/lib/db';
+import { db, type Puesto, type Rancho, type RegistroAsistencia, type Trabajador } from '@/lib/db';
 import type { Modulo } from '@/lib/permissions';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
 
@@ -9,6 +9,25 @@ type TrabajadorRemoto = {
   cuadrilla: string;
   rancho: string;
   estado: Trabajador['estado'];
+  puesto: string | null;
+  hora_entrada_programada: string | null;
+  hora_salida_programada: string | null;
+  vacaciones_inicio: string | null;
+  vacaciones_fin: string | null;
+};
+
+type RanchoRemoto = {
+  id: string;
+  nombre: string;
+  activo: boolean;
+};
+
+type PuestoRemoto = {
+  id: string;
+  nombre: string;
+  hora_entrada: string;
+  hora_salida: string;
+  activo: boolean;
 };
 
 type AsistenciaRemota = {
@@ -71,6 +90,11 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
         cuadrilla: trabajador.cuadrilla,
         rancho: trabajador.rancho,
         estado: trabajador.estado,
+        puesto: trabajador.puesto ?? null,
+        hora_entrada_programada: trabajador.horaEntradaProgramada ?? null,
+        hora_salida_programada: trabajador.horaSalidaProgramada ?? null,
+        vacaciones_inicio: trabajador.vacacionesInicio ?? null,
+        vacaciones_fin: trabajador.vacacionesFin ?? null,
       });
       if (error) throw error;
       await db.trabajadores.update(trabajador.id, { cloudId, sincronizado: true });
@@ -104,7 +128,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
 
   if (puedeLeerPersonal) {
     const { data, error } = await supabase.from('trabajadores')
-      .select('id, user_id, nombre, cuadrilla, rancho, estado');
+      .select('id, user_id, nombre, cuadrilla, rancho, estado, puesto, hora_entrada_programada, hora_salida_programada, vacaciones_inicio, vacaciones_fin');
     if (error) throw error;
     await db.transaction('rw', db.trabajadores, async () => {
       for (const remoto of (data ?? []) as TrabajadorRemoto[]) {
@@ -119,6 +143,11 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
           cuadrilla: remoto.cuadrilla,
           rancho: remoto.rancho,
           estado: remoto.estado,
+          puesto: remoto.puesto ?? undefined,
+          horaEntradaProgramada: remoto.hora_entrada_programada?.slice(0, 5) ?? null,
+          horaSalidaProgramada: remoto.hora_salida_programada?.slice(0, 5) ?? null,
+          vacacionesInicio: remoto.vacaciones_inicio ?? null,
+          vacacionesFin: remoto.vacaciones_fin ?? null,
           vectorFacial: local?.vectorFacial ?? null,
         };
         if (local?.id) {
@@ -126,11 +155,50 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
             local.cuadrilla === valores.cuadrilla &&
             local.rancho === valores.rancho &&
             local.estado === valores.estado &&
+            local.puesto === valores.puesto &&
+            local.horaEntradaProgramada === valores.horaEntradaProgramada &&
+            local.horaSalidaProgramada === valores.horaSalidaProgramada &&
+            local.vacacionesInicio === valores.vacacionesInicio &&
+            local.vacacionesFin === valores.vacacionesFin &&
             local.sincronizado;
           if (!coincide) await db.trabajadores.update(local.id, valores);
         } else {
           await db.trabajadores.add(valores);
         }
+      }
+
+    });
+  }
+
+  if (puedeLeerPersonal) {
+    const [{ data: ranchosData, error: ranchosError }, { data: puestosData, error: puestosError }] = await Promise.all([
+      supabase.from('ranchos').select('id, nombre, activo'),
+      supabase.from('puestos').select('id, nombre, hora_entrada, hora_salida, activo'),
+    ]);
+    if (ranchosError) throw ranchosError;
+    if (puestosError) throw puestosError;
+    await db.transaction('rw', db.ranchos, db.puestos, async () => {
+      for (const remoto of (ranchosData ?? []) as RanchoRemoto[]) {
+        const local = await db.ranchos.where('cloudId').equals(remoto.id).first();
+        const valores: Omit<Rancho, 'id'> = {
+          cloudId: remoto.id,
+          nombre: remoto.nombre,
+          activo: remoto.activo,
+        };
+        if (local?.id) await db.ranchos.update(local.id, valores);
+        else await db.ranchos.add(valores);
+      }
+      for (const remoto of (puestosData ?? []) as PuestoRemoto[]) {
+        const local = await db.puestos.where('cloudId').equals(remoto.id).first();
+        const valores: Omit<Puesto, 'id'> = {
+          cloudId: remoto.id,
+          nombre: remoto.nombre,
+          horaEntrada: remoto.hora_entrada.slice(0, 5),
+          horaSalida: remoto.hora_salida.slice(0, 5),
+          activo: remoto.activo,
+        };
+        if (local?.id) await db.puestos.update(local.id, valores);
+        else await db.puestos.add(valores);
       }
     });
   }
