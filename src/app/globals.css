@@ -139,6 +139,7 @@ html.dark .dark-mode-toggle:hover {
 html.dark input,
 html.dark select {
   color-scheme: dark;
+  color: #32bd47;
 }
 
 html.dark select option {

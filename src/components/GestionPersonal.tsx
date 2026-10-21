@@ -7,7 +7,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { useAuth } from '@/lib/auth';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
 import { obtenerFechaLocal } from '@/lib/asistencia';
-import { UserPlus, Users, Trash2, Camera, X, CheckCircle, MapPin, Clock3, Plus, Save, CalendarDays } from 'lucide-react';
+import { UserPlus, Users, Trash2, Camera, X, CheckCircle, MapPin, Clock3, Plus, Save, CalendarDays, LucideTrash2 } from 'lucide-react';
 
 const CUADRILLAS_DISPONIBLES = ['Cuadrilla A - Cosecha', 'Cuadrilla B - Riego', 'Cuadrilla C - Empaque', 'Mantenimiento'];
 
@@ -193,6 +193,28 @@ export default function GestionPersonal() {
     }
   };
 
+  const eliminarRancho = async (ranchoCatalogo: (typeof ranchos)[number]) => {
+    if (!ranchoCatalogo.id || !navigator.onLine) {
+      setMensajeCatalogo('Conéctate a internet para eliminar el rancho del catálogo.');
+      return;
+    }
+    if (!confirm(`¿Eliminar definitivamente el rancho "${ranchoCatalogo.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setGuardandoCatalogo(true);
+    setMensajeCatalogo(null);
+    try {
+      const { error } = await getSupabaseBrowserClient().from('ranchos')
+        .delete().eq('id', ranchoCatalogo.cloudId);
+      if (error) throw error;
+      await db.ranchos.delete(ranchoCatalogo.id);
+      setMensajeCatalogo('Rancho eliminado definitivamente del catálogo.');
+    } catch (error) {
+      console.error('No se pudo eliminar el rancho:', error);
+      setMensajeCatalogo(error instanceof Error ? error.message : 'No se pudo eliminar el rancho.');
+    } finally {
+      setGuardandoCatalogo(false);
+    }
+  };
+
   const cambiarEstadoPuesto = async (puestoCatalogo: (typeof puestos)[number]) => {
     if (!puestoCatalogo.id || !navigator.onLine) {
       setMensajeCatalogo('Conéctate a internet para actualizar el catálogo.');
@@ -208,6 +230,28 @@ export default function GestionPersonal() {
     } catch (error) {
       console.error('No se pudo actualizar el puesto:', error);
       setMensajeCatalogo(error instanceof Error ? error.message : 'No se pudo actualizar el puesto.');
+    } finally {
+      setGuardandoCatalogo(false);
+    }
+  };
+
+  const eliminarPuesto = async (puestoCatalogo: (typeof puestos)[number]) => {
+    if (!puestoCatalogo.id || !navigator.onLine) {
+      setMensajeCatalogo('Conéctate a internet para eliminar el puesto del catálogo.');
+      return;
+    }
+    if (!confirm(`¿Eliminar definitivamente el puesto "${puestoCatalogo.nombre}"? Esta acción no se puede deshacer.`)) return;
+    setGuardandoCatalogo(true);
+    setMensajeCatalogo(null);
+    try {
+      const { error } = await getSupabaseBrowserClient().from('puestos')
+        .delete().eq('id', puestoCatalogo.cloudId);
+      if (error) throw error;
+      await db.puestos.delete(puestoCatalogo.id);
+      setMensajeCatalogo('Puesto eliminado definitivamente del catálogo.');
+    } catch (error) {
+      console.error('No se pudo eliminar el puesto:', error);
+      setMensajeCatalogo(error instanceof Error ? error.message : 'No se pudo eliminar el puesto.');
     } finally {
       setGuardandoCatalogo(false);
     }
@@ -398,10 +442,18 @@ export default function GestionPersonal() {
                     <span className={`min-w-0 break-words ${ranchoCatalogo.activo ? 'text-slate-700' : 'text-slate-400'}`}>
                       {ranchoCatalogo.nombre}{!ranchoCatalogo.activo && ' (inactivo)'}
                     </span>
-                    <button type="button" disabled={guardandoCatalogo} onClick={() => void cambiarEstadoRancho(ranchoCatalogo)}
-                      className="whitespace-nowrap text-[11px] font-medium text-[#2e6f40] disabled:opacity-50 sm:text-xs">
-                      {ranchoCatalogo.activo ? 'Desactivar' : 'Activar'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button type="button" disabled={guardandoCatalogo} onClick={() => void cambiarEstadoRancho(ranchoCatalogo)}
+                        className="whitespace-nowrap text-[11px] font-medium text-[#2e6f40] disabled:opacity-50 sm:text-xs">
+                        {ranchoCatalogo.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button type="button" disabled={guardandoCatalogo} onClick={() => void eliminarRancho(ranchoCatalogo)}
+                        aria-label={`Eliminar definitivamente el rancho ${ranchoCatalogo.nombre}`}
+                        title="Eliminar definitivamente"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-red-600 disabled:opacity-50 sm:text-xs">
+                        <Trash2 size={14} /> 
+                      </button>
+                    </div>
                   </li>
                 ))}
                 {ranchos.length === 0 && <li className="py-2 text-sm text-slate-500">Cargando ranchos...</li>}
@@ -438,10 +490,18 @@ export default function GestionPersonal() {
                       {puestoCatalogo.nombre}: {puestoCatalogo.horaEntrada}–{puestoCatalogo.horaSalida}
                       {!puestoCatalogo.activo && ' (inactivo)'}
                     </span>
-                    <button type="button" disabled={guardandoCatalogo} onClick={() => void cambiarEstadoPuesto(puestoCatalogo)}
-                      className="whitespace-nowrap text-[11px] font-medium text-[#2e6f40] disabled:opacity-50 sm:text-xs">
-                      {puestoCatalogo.activo ? 'Desactivar' : 'Activar'}
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button type="button" disabled={guardandoCatalogo} onClick={() => void cambiarEstadoPuesto(puestoCatalogo)}
+                        className="whitespace-nowrap text-[11px] font-medium text-[#2e6f40] disabled:opacity-50 sm:text-xs">
+                        {puestoCatalogo.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                      <button type="button" disabled={guardandoCatalogo} onClick={() => void eliminarPuesto(puestoCatalogo)}
+                        aria-label={`Eliminar definitivamente el puesto ${puestoCatalogo.nombre}`}
+                        title="Eliminar definitivamente"
+                        className="inline-flex items-center gap-1 whitespace-nowrap text-[11px] font-medium text-red-600 disabled:opacity-50 sm:text-xs">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </li>
                 ))}
                 {puestos.length === 0 && <li className="py-2 text-sm text-slate-500">Cargando puestos...</li>}

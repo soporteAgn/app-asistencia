@@ -233,7 +233,7 @@ export default function ChecadorFacial() {
     <div className="max-w-2xl mx-auto bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
       <div className="text-center mb-6">
         <h2 className="text-xl font-bold text-[#1a3821] flex items-center justify-center gap-2">
-          <Camera className="text-[#2e6f40]" /> Checador Facial (Offline)
+          <Camera className="text-[#2e6f40]" /> Checador Facial
         </h2>
         <p className="text-xs text-slate-500 mt-1">
           Colócate frente a la cámara y pulsa el botón para registrar tu siguiente marcación.
@@ -273,7 +273,7 @@ export default function ChecadorFacial() {
       {!modelosListos && !errorModelos && (
         <div className="mt-4 p-3 rounded-lg text-sm font-medium flex items-center gap-2 bg-amber-100 text-amber-800">
           <RefreshCw size={18} className="animate-spin" />
-          <span>Cargando modelos faciales locales...</span>
+          <span>Cargando rostros...</span>
         </div>
       )}
 
@@ -324,7 +324,7 @@ export default function ChecadorFacial() {
           </>
         ) : (
           <>
-            <UserCheck size={18} /> Escanear y registrar marcación
+            <UserCheck size={18} /> Escanear rostro y registrar marcación
           </>
         )}
       </button>

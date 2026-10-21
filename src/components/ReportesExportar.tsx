@@ -68,7 +68,7 @@ export default function ReportesExportar() {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Asistencias");
 
-    // Descargar el archivo .xlsx generado localmente
+    // Descargar el archivo .xlsx 
     XLSX.writeFile(workbook, `Reporte_Asistencia_${fechaInicio}_al_${fechaFin}.xlsx`);
   };
 
@@ -77,14 +77,16 @@ export default function ReportesExportar() {
       <div className="flex items-center gap-3 mb-6">
         <FileSpreadsheet className="text-[#2e6f40]" size={28} />
         <div>
-          <h2 className="text-xl font-bold text-[#1a3821]">Exportación de Asistencia y Jornada a Excel (.xlsx)</h2>
+          <h2 className="text-xl font-bold text-[#1a3821]">Exportar a Excel</h2>
+          {/* Falta agregar faltas al exportar */}
           <p className="text-xs text-slate-500">Incluye entrada, salida, marcaciones de comida y su duración calculada.</p>
+
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div>
-          <label htmlFor="fecha-inicio" className="block text-xs font-semibold text-slate-600 mb-1">Fecha Inicio</label>
+          <label htmlFor="fecha-inicio" className="block text-xs font-semibold text-slate-600 mb-1">Fecha inicio</label>
           <input
             id="fecha-inicio"
             type="date"
@@ -93,6 +95,7 @@ export default function ReportesExportar() {
             className="w-full p-2.5 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2e6f40]"
           />
         </div>
+        
         <div>
           <label htmlFor="fecha-fin" className="block text-xs font-semibold text-slate-600 mb-1">Fecha Fin</label>
           <input
@@ -103,6 +106,7 @@ export default function ReportesExportar() {
             className="w-full p-2.5 border rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-[#2e6f40]"
           />
         </div>
+        
         <div>
           <label className="block text-xs font-semibold text-slate-600 mb-1">Filtrar por Rancho</label>
           <select
@@ -117,9 +121,10 @@ export default function ReportesExportar() {
 
       <div className="bg-[#f4f6f4] p-4 rounded-xl border border-slate-200 flex items-center justify-between">
         <div>
-          <p className="font-semibold text-slate-700 text-sm">Registros disponibles en la tablet:</p>
+          <p className="font-semibold text-slate-700 text-sm">Registros totales en la tablet</p>
           <p className="text-xs text-slate-500">Total en base de datos local: {asistencias?.length || 0} registros</p>
         </div>
+
         <button
           onClick={exportarExcel}
           className="px-5 py-2.5 bg-[#2e6f40] hover:bg-[#235732] text-white font-semibold rounded-lg shadow transition flex items-center gap-2 text-sm"

@@ -34,7 +34,7 @@ Aplicación Next.js para control de asistencia, gestión de personal y reportes.
 - Los cambios de personal y vacaciones se sincronizan con Supabase al recuperar la conexión. Los catálogos se guardan localmente para poder consultar las opciones sincronizadas sin conexión; para crear o activar ranchos y puestos se requiere conexión.
 - Los datos IndexedDB existentes sin usuario se asignan al primer administrador que conecte el dispositivo después de configurar Supabase. Revisa previamente cualquier información de prueba que quieras descartar.
 
-## Desarrollo
+## Dependencias de Desarrollo
 
 ```bash
 npm install
