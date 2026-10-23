@@ -17,8 +17,12 @@ export default function PanelAsistencia({ trabajadores, asistencias, ahora }: Pa
   const [busqueda, setBusqueda] = useState('');
 
   const fechaHoy = obtenerFechaLocal(ahora);
-  const asistenciasHoy = asistencias?.filter((registro) => registro.fecha === fechaHoy) ?? [];
-  const totalTrabajadores = trabajadores?.length ?? 0;
+  const trabajadoresActivos = trabajadores?.filter((trabajador) => trabajador.estado === 'Activo') ?? [];
+  const idsTrabajadoresActivos = new Set(trabajadoresActivos.map((trabajador) => trabajador.id));
+  const asistenciasHoy = asistencias?.filter(
+    (registro) => registro.fecha === fechaHoy && idsTrabajadoresActivos.has(registro.trabajadorId),
+  ) ?? [];
+  const totalTrabajadores = trabajadoresActivos.length;
   const totalPresentes = asistenciasHoy.length;
   const trabajadoresConRegistro = new Set(asistenciasHoy.map((registro) => registro.trabajadorId));
   const minutosActuales = ahora.getHours() * 60 + ahora.getMinutes();
@@ -26,15 +30,14 @@ export default function PanelAsistencia({ trabajadores, asistencias, ahora }: Pa
     trabajador.vacacionesInicio && trabajador.vacacionesFin &&
     trabajador.vacacionesInicio <= fechaHoy && trabajador.vacacionesFin >= fechaHoy,
   );
-  const trabajadoresActivosSinVacaciones = trabajadores?.filter(
-    (trabajador) => trabajador.estado === 'Activo' && !estaDeVacaciones(trabajador),
-  ) ?? [];
+  const trabajadoresActivosSinVacaciones = trabajadoresActivos.filter(
+    (trabajador) => !estaDeVacaciones(trabajador),
+  );
   const sinRegistro = trabajadoresActivosSinVacaciones.filter(
     (trabajador) => !trabajadoresConRegistro.has(trabajador.id ?? -1),
   ).length;
-  const faltas = trabajadores?.filter((trabajador) => {
+  const faltas = trabajadoresActivos.filter((trabajador) => {
     if (
-      trabajador.estado !== 'Activo' ||
       estaDeVacaciones(trabajador) ||
       trabajadoresConRegistro.has(trabajador.id ?? -1)
     ) return false;
@@ -45,9 +48,9 @@ export default function PanelAsistencia({ trabajadores, asistencias, ahora }: Pa
       ? Number(horaProgramada[1]) * 60 + Number(horaProgramada[2])
       : 17 * 60;
     return minutosActuales >= horaCierre;
-  }).length ?? 0;
+  }).length;
 
-  const trabajadoresFiltrados = trabajadores?.filter(t =>
+  const trabajadoresFiltrados = trabajadoresActivos.filter(t =>
     t.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
     t.rancho.toLowerCase().includes(busqueda.toLowerCase())
   );
@@ -160,6 +163,15 @@ export default function PanelAsistencia({ trabajadores, asistencias, ahora }: Pa
                       </tr>
                     );
                   })}
+                  {trabajadores && trabajadoresFiltrados.length === 0 && (
+                    <tr>
+                      <td colSpan={8} className="p-4 text-center text-slate-500">
+                        {busqueda
+                          ? 'No hay trabajadores activos que coincidan con la búsqueda.'
+                          : 'No hay trabajadores activos registrados.'}
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
               </div>

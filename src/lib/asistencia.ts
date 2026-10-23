@@ -26,7 +26,7 @@ export function obtenerSiguientePaso(registro?: RegistroAsistencia): PasoMarcaci
   if (!registro) return 'entrada';
   if (!registro.horaSalidaComida) return 'salidaComida';
   if (!registro.horaRegresoComida) return 'regresoComida';
-  if (!registro.horaSalida) return 'salida';
+       if (!registro.horaSalida) return 'salida';
   return null;
 }
 
@@ -135,6 +135,8 @@ export function obtenerDuracionComida(registro?: RegistroAsistencia) {
   if (salida === null || regreso === null || regreso < salida) return null;
   return regreso - salida;
 }
+
+
 
 export function formatearDuracionComida(registro?: RegistroAsistencia) {
   const minutos = obtenerDuracionComida(registro);

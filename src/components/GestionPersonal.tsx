@@ -47,6 +47,7 @@ export default function GestionPersonal() {
     () => user ? db.trabajadores.where('userId').equals(user.id).toArray() : [],
     [user?.id],
   );
+  const personalVigente = personal?.filter((trabajador) => trabajador.estado === 'Activo') ?? [];
   const ranchos = useLiveQuery(() => db.ranchos.orderBy('nombre').toArray(), []) ?? [];
   const puestos = useLiveQuery(() => db.puestos.orderBy('nombre').toArray(), []) ?? [];
   const ranchosActivos = ranchos.filter((ranchoDisponible) => ranchoDisponible.activo);
@@ -387,8 +388,12 @@ export default function GestionPersonal() {
 
   // Función para dar de baja (cambiar estado)
   const handleBajaTrabajador = async (id: number, nombre: string) => {
-    if (confirm(`¿Estás seguro de dar de BAJA a ${nombre}? No podrá marcar asistencia.`)) {
+    if (!confirm(`¿Dar de baja a ${nombre}? Dejará de aparecer en Gestión de Personal, pero se conservará en la base de datos como parte del historial. No podrá marcar asistencia.`)) return;
+    try {
       await db.trabajadores.update(id, { estado: 'Baja', sincronizado: false });
+    } catch (error) {
+      console.error('No se pudo dar de baja al trabajador:', error);
+      alert(error instanceof Error ? error.message : 'No se pudo dar de baja al trabajador.');
     }
   };
 
@@ -527,7 +532,7 @@ export default function GestionPersonal() {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {personal?.map((t) => {
+            {personalVigente.map((t) => {
               const puestoActual = puestos.find((opcion) => opcion.nombre === t.puesto);
               const puestoElegido = puestosElegidos[t.id ?? -1] ?? puestoActual?.cloudId ?? '';
               const estaDeVacaciones = Boolean(
@@ -657,6 +662,13 @@ export default function GestionPersonal() {
               </tr>
               );
             })}
+            {personal && personalVigente.length === 0 && (
+              <tr>
+                <td colSpan={puedeAdministrarPersonal ? 7 : 6} className="p-4 text-center text-slate-500">
+                  No hay trabajadores vigentes registrados.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

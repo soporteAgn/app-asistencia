@@ -52,6 +52,9 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
     permissions.includes('personal') ||
     permissions.includes('asistencia') ||
     permissions.includes('checador');
+  const puedeLeerTrabajadores =
+    puedeLeerPersonal ||
+    permissions.includes('reportes');
   const puedeLeerAsistencias =
     role === 'admin' ||
     permissions.includes('asistencia') ||
@@ -71,7 +74,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
 
   const supabase = getSupabaseBrowserClient();
 
-  if (!puedeLeerPersonal) {
+  if (!puedeLeerTrabajadores) {
     await db.trabajadores.where('userId').equals(userId).delete();
   }
   if (!puedeLeerAsistencias) {
@@ -126,7 +129,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
     }
   }
 
-  if (puedeLeerPersonal) {
+  if (puedeLeerTrabajadores) {
     const { data, error } = await supabase.from('trabajadores')
       .select('id, user_id, nombre, cuadrilla, rancho, estado, puesto, hora_entrada_programada, hora_salida_programada, vacaciones_inicio, vacaciones_fin');
     if (error) throw error;

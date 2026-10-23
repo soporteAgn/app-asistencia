@@ -131,3 +131,10 @@ export default function SyncManager({ profile }: { profile: Perfil }) {
     </div>
   );
 }
+
+
+
+
+
+
+
