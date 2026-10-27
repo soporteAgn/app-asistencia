@@ -5,7 +5,7 @@
   --foreground: #171717;
 }
 
-/* stylelint-disable at-rule-no-unknown -- @theme is a valid Tailwind CSS v4 directive. */
+/* Declaracion de variables TailwindCSS - Para el tema de colores */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

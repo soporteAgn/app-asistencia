@@ -1,4 +1,4 @@
-import { db, type Puesto, type Rancho, type RegistroAsistencia, type Trabajador } from '@/lib/db';
+import { db, type Cuadrilla, type Puesto, type Rancho, type RegistroAsistencia, type Trabajador } from '@/lib/db';
 import type { Modulo } from '@/lib/permissions';
 import { getSupabaseBrowserClient } from '@/lib/supabase';
 
@@ -6,6 +6,7 @@ type TrabajadorRemoto = {
   id: string;
   user_id: string;
   nombre: string;
+  id_sys21: string | null;
   cuadrilla: string;
   rancho: string;
   estado: Trabajador['estado'];
@@ -17,6 +18,12 @@ type TrabajadorRemoto = {
 };
 
 type RanchoRemoto = {
+  id: string;
+  nombre: string;
+  activo: boolean;
+};
+
+type CuadrillaRemota = {
   id: string;
   nombre: string;
   activo: boolean;
@@ -90,6 +97,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
         id: cloudId,
         user_id: userId,
         nombre: trabajador.nombre,
+        id_sys21: trabajador.idSys21 ?? null,
         cuadrilla: trabajador.cuadrilla,
         rancho: trabajador.rancho,
         estado: trabajador.estado,
@@ -131,7 +139,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
 
   if (puedeLeerTrabajadores) {
     const { data, error } = await supabase.from('trabajadores')
-      .select('id, user_id, nombre, cuadrilla, rancho, estado, puesto, hora_entrada_programada, hora_salida_programada, vacaciones_inicio, vacaciones_fin');
+      .select('id, user_id, nombre, id_sys21, cuadrilla, rancho, estado, puesto, hora_entrada_programada, hora_salida_programada, vacaciones_inicio, vacaciones_fin');
     if (error) throw error;
     await db.transaction('rw', db.trabajadores, async () => {
       for (const remoto of (data ?? []) as TrabajadorRemoto[]) {
@@ -143,6 +151,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
           userId,
           sincronizado: true,
           nombre: remoto.nombre,
+          idSys21: remoto.id_sys21 ?? null,
           cuadrilla: remoto.cuadrilla,
           rancho: remoto.rancho,
           estado: remoto.estado,
@@ -155,6 +164,7 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
         };
         if (local?.id) {
           const coincide = local.nombre === valores.nombre &&
+            local.idSys21 === valores.idSys21 &&
             local.cuadrilla === valores.cuadrilla &&
             local.rancho === valores.rancho &&
             local.estado === valores.estado &&
@@ -174,13 +184,26 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
   }
 
   if (puedeLeerPersonal) {
-    const [{ data: ranchosData, error: ranchosError }, { data: puestosData, error: puestosError }] = await Promise.all([
+    const [
+      { data: ranchosData, error: ranchosError },
+      { data: cuadrillasData, error: cuadrillasError },
+      { data: puestosData, error: puestosError },
+    ] = await Promise.all([
       supabase.from('ranchos').select('id, nombre, activo'),
+      supabase.from('cuadrillas').select('id, nombre, activo'),
       supabase.from('puestos').select('id, nombre, hora_entrada, hora_salida, activo'),
     ]);
     if (ranchosError) throw ranchosError;
+    if (cuadrillasError) throw cuadrillasError;
     if (puestosError) throw puestosError;
-    await db.transaction('rw', db.ranchos, db.puestos, async () => {
+    await db.transaction('rw', db.ranchos, db.cuadrillas, db.puestos, async () => {
+      const cuadrillasRemotasIds = new Set(
+        ((cuadrillasData ?? []) as CuadrillaRemota[]).map((cuadrilla) => cuadrilla.id),
+      );
+      await db.cuadrillas.filter(
+        (cuadrilla) => !cuadrillasRemotasIds.has(cuadrilla.cloudId),
+      ).delete();
+
       for (const remoto of (ranchosData ?? []) as RanchoRemoto[]) {
         const local = await db.ranchos.where('cloudId').equals(remoto.id).first();
         const valores: Omit<Rancho, 'id'> = {
@@ -190,6 +213,16 @@ export async function syncUserData(userId: string, role: string, permissions: Mo
         };
         if (local?.id) await db.ranchos.update(local.id, valores);
         else await db.ranchos.add(valores);
+      }
+      for (const remoto of (cuadrillasData ?? []) as CuadrillaRemota[]) {
+        const local = await db.cuadrillas.where('cloudId').equals(remoto.id).first();
+        const valores: Omit<Cuadrilla, 'id'> = {
+          cloudId: remoto.id,
+          nombre: remoto.nombre,
+          activo: remoto.activo,
+        };
+        if (local?.id) await db.cuadrillas.update(local.id, valores);
+        else await db.cuadrillas.add(valores);
       }
       for (const remoto of (puestosData ?? []) as PuestoRemoto[]) {
         const local = await db.puestos.where('cloudId').equals(remoto.id).first();

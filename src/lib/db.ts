@@ -6,6 +6,7 @@ export interface Trabajador {
   userId?: string;
   sincronizado?: boolean;
   nombre: string;
+  idSys21?: string | null;
   cuadrilla: string;
   rancho: string;
   estado: 'Activo' | 'Baja';
@@ -18,6 +19,13 @@ export interface Trabajador {
 }
 
 export interface Rancho {
+  id?: number;
+  cloudId: string;
+  nombre: string;
+  activo: boolean;
+}
+
+export interface Cuadrilla {
   id?: number;
   cloudId: string;
   nombre: string;
@@ -54,6 +62,7 @@ export class CampoSyncDB extends Dexie {
   colaboradores!: Table<Trabajador>;
   asistencias!: Table<RegistroAsistencia>;
   ranchos!: Table<Rancho>;
+  cuadrillas!: Table<Cuadrilla>;
   puestos!: Table<Puesto>;
 
   constructor() {
@@ -78,6 +87,22 @@ export class CampoSyncDB extends Dexie {
       colaboradores: '++id, nombre, cuadrilla, rancho, estado',
       asistencias: '++id, trabajadorId, fecha, sincronizado, userId, cloudId',
       ranchos: '++id, cloudId, nombre, activo',
+      puestos: '++id, cloudId, nombre, activo',
+    });
+    this.version(5).stores({
+      trabajadores: '++id, nombre, cuadrilla, rancho, estado, userId, cloudId, sincronizado',
+      colaboradores: '++id, nombre, cuadrilla, rancho, estado',
+      asistencias: '++id, trabajadorId, fecha, sincronizado, userId, cloudId',
+      ranchos: '++id, cloudId, nombre, activo',
+      cuadrillas: '++id, cloudId, nombre, activo',
+      puestos: '++id, cloudId, nombre, activo',
+    });
+    this.version(6).stores({
+      trabajadores: '++id, nombre, cuadrilla, rancho, estado, userId, cloudId, sincronizado',
+      colaboradores: '++id, nombre, cuadrilla, rancho, estado',
+      asistencias: '++id, trabajadorId, fecha, sincronizado, userId, cloudId',
+      ranchos: '++id, cloudId, nombre, activo',
+      cuadrillas: '++id, cloudId, nombre, activo',
       puestos: '++id, cloudId, nombre, activo',
     });
   }

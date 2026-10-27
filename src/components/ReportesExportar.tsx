@@ -13,6 +13,7 @@ const RANCHOS_LISTA = ['Todos', 'Rancho El Paraíso', 'Rancho La Esperanza', 'Ra
 type FilaReporte = {
   trabajadorId?: number;
   trabajador: string;
+  idSys21: string;
   cuadrilla: string;
   rancho: string;
   fecha: string;
@@ -114,6 +115,7 @@ export default function ReportesExportar() {
     const filas: FilaReporte[] = filtrados.map((asistencia) => ({
       trabajadorId: asistencia.trabajadorId,
       trabajador: asistencia.nombre,
+      idSys21: trabajadoresPorId.get(asistencia.trabajadorId)?.idSys21 ?? '',
       cuadrilla: asistencia.cuadrilla,
       rancho: asistencia.rancho,
       fecha: asistencia.fecha,
@@ -164,6 +166,7 @@ export default function ReportesExportar() {
           filas.push({
             trabajadorId: trabajador.id,
             trabajador: trabajador.nombre,
+            idSys21: trabajador.idSys21 ?? '',
             cuadrilla: trabajador.cuadrilla,
             rancho: trabajador.rancho,
             fecha: fechaRegistro,
@@ -193,6 +196,7 @@ export default function ReportesExportar() {
     const detalle = filas.map((fila, index) => ({
       'No.': index + 1,
       'Trabajador': fila.trabajador,
+      'ID Sys21': fila.idSys21,
       'Cuadrilla': fila.cuadrilla,
       'Rancho': fila.rancho,
       'Fecha': fila.fecha,
@@ -206,6 +210,7 @@ export default function ReportesExportar() {
     }));
     const resumenPorTrabajador = new Map<string, {
       trabajador: string;
+      idSys21: string;
       cuadrilla: string;
       rancho: string;
       asistencias: number;
@@ -218,6 +223,7 @@ export default function ReportesExportar() {
       const clave = String(fila.trabajadorId ?? `${fila.trabajador}|${fila.cuadrilla}|${fila.rancho}`);
       const resumen = resumenPorTrabajador.get(clave) ?? {
         trabajador: fila.trabajador,
+        idSys21: fila.idSys21,
         cuadrilla: fila.cuadrilla,
         rancho: fila.rancho,
         asistencias: 0,
@@ -238,6 +244,7 @@ export default function ReportesExportar() {
         .sort((a, b) => a.trabajador.localeCompare(b.trabajador, 'es'))
         .map((resumen) => ({
           'Trabajador': resumen.trabajador,
+          'ID Sys21': resumen.idSys21,
           'Cuadrilla': resumen.cuadrilla,
           'Rancho': resumen.rancho,
           'Asistencias': resumen.asistencias,

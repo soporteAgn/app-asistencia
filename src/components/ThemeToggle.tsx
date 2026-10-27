@@ -6,6 +6,7 @@ import { Moon, Sun } from 'lucide-react';
 const CLAVE_TEMA = 'control-asistencia-tema';
 const EVENTO_TEMA = 'control-asistencia-cambio-tema';
 
+/**inicia los cambios de temas**/
 function suscribirTema(callback: () => void) {
   window.addEventListener('storage', callback);
   window.addEventListener(EVENTO_TEMA, callback);

@@ -15,6 +15,7 @@ CREATE TABLE public.trabajadores (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   user_id uuid NOT NULL,
   nombre text NOT NULL,
+  id_sys21 text,
   cuadrilla text NOT NULL,
   rancho text NOT NULL,
   estado text NOT NULL CHECK (estado = ANY (ARRAY['Activo'::text, 'Baja'::text])),
@@ -27,6 +28,10 @@ CREATE TABLE public.trabajadores (
   CONSTRAINT trabajadores_pkey PRIMARY KEY (id),
   CONSTRAINT trabajadores_user_id_fkey FOREIGN KEY (user_id) REFERENCES auth.users(id)
 );
+
+CREATE UNIQUE INDEX trabajadores_user_id_id_sys21_uidx
+  ON public.trabajadores USING btree (user_id, id_sys21)
+  WHERE ((id_sys21 IS NOT NULL) AND (id_sys21 <> ''::text));
 
 
 CREATE TABLE public.asistencias (

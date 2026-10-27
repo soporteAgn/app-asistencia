@@ -25,6 +25,14 @@ function detalleError(error: unknown) {
   const columnasMarcaciones = /hora_salida_comida|hora_regreso_comida|hora_salida/.test(mensaje);
   const columnasPersonal = /puesto|hora_entrada_programada|hora_salida_programada|vacaciones_inicio|vacaciones_fin/.test(mensaje);
   const catalogosPersonal = /ranchos|puestos/.test(mensaje);
+  const catalogoCuadrillas = /cuadrillas/.test(mensaje);
+
+  if (
+    catalogoCuadrillas &&
+    (detalle.code === 'PGRST205' || detalle.code === '42P01' || /relation .* does not exist|schema cache/i.test(mensaje))
+  ) {
+    return 'Supabase aún no tiene el catálogo de cuadrillas. Ejecuta supabase/migrations/202610260001_cuadrillas_catalog.sql en el SQL Editor y vuelve a sincronizar.';
+  }
 
   if (
     columnasPersonal &&
@@ -131,7 +139,6 @@ export default function SyncManager({ profile }: { profile: Perfil }) {
     </div>
   );
 }
-
 
 
 
