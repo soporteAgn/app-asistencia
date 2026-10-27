@@ -218,8 +218,7 @@ export default function TablaPersonal({
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
-            <th className="p-4">ID Local</th>
-            <th className="p-4">ID Sys21</th>
+            <th className="p-4">ID SYS21</th>
             <th className="p-4">Nombre Completo</th>
             <th className="p-4">Rancho / Cuadrilla</th>
             <th className="p-4">Puesto / horario</th>

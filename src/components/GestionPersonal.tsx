@@ -314,8 +314,7 @@ export default function GestionPersonal() {
     <div className="min-w-0 w-full overflow-hidden rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
       <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="flex min-w-0 items-center gap-2 text-xl font-bold text-[#1a3821]">
-          <Users className="shrink-0 text-[#2e6f40]" /> Gestión de Personal
-          Operativo
+          <Users className="shrink-0 text-[#2e6f40]" /> Gestión de Personal 
         </h2>
         {puedeAdministrarPersonal && (
           <button

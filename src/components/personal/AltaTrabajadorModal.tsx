@@ -6,8 +6,9 @@ import { Camera, CheckCircle, X } from "lucide-react";
 import type { Cuadrilla, Puesto, Rancho, Trabajador } from "@/lib/db";
 
 export interface AltaTrabajadorFormData {
-  nombre: string;
+  
   idSys21: string;
+  nombre: string;
   rancho: string;
   cuadrilla: string;
   puestoSeleccionado: string;
@@ -246,10 +247,10 @@ export default function AltaTrabajadorModal({
             </div>
           ) : (
 
-            
+
             <div className="flex flex-col justify-center space-y-5">
               <label className="block text-sm font-semibold text-slate-700">
-                ID Sys21 (opcional)
+                ID Sys21
                 <input
                   type="text"
                   value={idSys21}
