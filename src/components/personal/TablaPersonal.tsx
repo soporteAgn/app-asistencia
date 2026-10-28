@@ -1,12 +1,7 @@
 "use client";
 
 import type { Dispatch, FormEventHandler, SetStateAction } from "react";
-import {
-  CalendarDays,
-  Camera,
-  Save,
-  Trash2,
-} from "lucide-react";
+import { CalendarDays, Camera, Save, Trash2 } from "lucide-react";
 import type { Puesto, Trabajador } from "@/lib/db";
 
 interface TablaPersonalProps {
@@ -72,8 +67,7 @@ function CeldaIdSys21({
         title="Guardar ID Sys21"
         aria-label={`Guardar ID Sys21 de ${trabajador.nombre}`}
         disabled={
-          !trabajador.id ||
-          valorEditado.trim() === (trabajador.idSys21 ?? "")
+          !trabajador.id || valorEditado.trim() === (trabajador.idSys21 ?? "")
         }
         onClick={onGuardar}
         className="rounded p-1.5 text-[#2e6f40] hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-40"
@@ -111,9 +105,9 @@ function CeldaVacaciones({
 }) {
   const estaDeVacaciones = Boolean(
     trabajador.vacacionesInicio &&
-      trabajador.vacacionesFin &&
-      trabajador.vacacionesInicio <= fechaHoy &&
-      trabajador.vacacionesFin >= fechaHoy,
+    trabajador.vacacionesFin &&
+    trabajador.vacacionesInicio <= fechaHoy &&
+    trabajador.vacacionesFin >= fechaHoy,
   );
 
   return (
@@ -140,7 +134,10 @@ function CeldaVacaciones({
               : "Registrar vacaciones"}
           </button>
           {editandoVacaciones && (
-            <form onSubmit={onGuardarVacaciones} className="mt-2 min-w-48 space-y-2">
+            <form
+              onSubmit={onGuardarVacaciones}
+              className="mt-2 min-w-48 space-y-2"
+            >
               <label className="block text-[11px] text-slate-500">
                 Desde
                 <input
@@ -160,7 +157,9 @@ function CeldaVacaciones({
                   type="date"
                   min={vacacionesInicio}
                   value={vacacionesFin}
-                  onChange={(event) => onVacacionesFinChange(event.target.value)}
+                  onChange={(event) =>
+                    onVacacionesFinChange(event.target.value)
+                  }
                   className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-xs"
                 />
               </label>
@@ -218,6 +217,7 @@ export default function TablaPersonal({
       <table className="w-full border-collapse text-left text-sm">
         <thead>
           <tr className="border-b border-slate-200 bg-slate-50 text-xs font-semibold uppercase text-slate-500">
+            <th className="p-4">ID</th>
             <th className="p-4">ID SYS21</th>
             <th className="p-4">Nombre Completo</th>
             <th className="p-4">Rancho / Cuadrilla</th>
@@ -239,10 +239,7 @@ export default function TablaPersonal({
               idsSys21Editados[trabajadorId] ?? trabajador.idSys21 ?? "";
 
             return (
-              <tr
-                key={trabajador.id}
-                className="hover:bg-slate-50"
-              >
+              <tr key={trabajador.id} className="hover:bg-slate-50">
                 <td className="p-4 font-mono text-slate-500">
                   {trabajador.id}
                 </td>
@@ -316,7 +313,7 @@ export default function TablaPersonal({
                       <div>{trabajador.puesto || "Sin asignar"}</div>
                       <div className="text-xs">
                         {trabajador.horaEntradaProgramada &&
-                        trabajador.horaSalidaProgramada
+                          trabajador.horaSalidaProgramada
                           ? `${trabajador.horaEntradaProgramada}–${trabajador.horaSalidaProgramada}`
                           : ""}
                       </div>
@@ -339,14 +336,13 @@ export default function TablaPersonal({
                     onVacacionesInicioChange(
                       trabajador.vacacionesInicio ?? fechaHoy,
                     );
-                    onVacacionesFinChange(
-                      trabajador.vacacionesFin ?? fechaHoy,
-                    );
+                    onVacacionesFinChange(trabajador.vacacionesFin ?? fechaHoy);
                   }}
                   onVacacionesInicioChange={onVacacionesInicioChange}
                   onVacacionesFinChange={onVacacionesFinChange}
                   onGuardarVacaciones={(event) => {
-                    if (trabajador.id) onGuardarVacaciones(event, trabajador.id);
+                    if (trabajador.id)
+                      onGuardarVacaciones(event, trabajador.id);
                   }}
                   onQuitarVacaciones={() => {
                     if (trabajador.id) onQuitarVacaciones(trabajador.id);

@@ -59,7 +59,7 @@ export default function PantallaLogin({
   };
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f4f6f4] p-4">
+    <main className="flex min-h-screen items-center justify-center bg-[#f4f6f4] p-4 " >
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-xl sm:p-9">
         <div className="mb-7 text-center">
           <div className="mx-auto mb-4 flex size-20 items-center justify-center rounded-2xl bg-[#ebf3ed] text-[#2e6f40]">

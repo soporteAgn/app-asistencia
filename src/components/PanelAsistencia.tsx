@@ -83,9 +83,9 @@ export default function PanelAsistencia({
 
   return (
     <>
-      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="mb-2 flex items-center justify-between text-slate-500">
+      <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5 ">
+        <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm ">
+          <div className="mb-2 flex items-center justify-between text-slate-500 ">
             <span className="text-xs font-semibold uppercase">
               Personal Registrado
             </span>

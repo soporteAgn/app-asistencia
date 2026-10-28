@@ -1,5 +1,44 @@
 @import "tailwindcss";
 
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2e6f40 #ebf3ed; /* pulgar y fondo */
+}
+
+html.dark * {
+  scrollbar-color: #4d9b61 #111b14;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: #ebf3ed;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #2e6f40;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #245a34;
+}
+
+html.dark *::-webkit-scrollbar-track {
+  background: #111b14;
+}
+
+html.dark *::-webkit-scrollbar-thumb {
+  background: #4d9b61;
+}
+
+html.dark *::-webkit-scrollbar-thumb:hover {
+  background: #63b875;
+}
+
 :root {
   --background: #f4f6f4;
   --foreground: #171717;
@@ -90,7 +129,7 @@ html.dark .border-amber-200 {
 }
 
 html.dark .border-emerald-200 {
-  border-color: #285b3a;
+  border-color: lab(34.48% -25.59 13.96);
 }
 
 html.dark .border-rose-200 {
@@ -147,3 +186,4 @@ html.dark select option {
   background-color: #17231b;
   color: #e5ece6;
 }
+
